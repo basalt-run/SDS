@@ -387,13 +387,4 @@ async function build() {
   }
 }
 
-if (process.argv.includes('--watch')) {
-  const watch = (await import('node-watch')).default
-  console.log('👁️  Watching /tokens for changes...')
-  watch(tokensDir, { recursive: true }, () => {
-    console.log('\n📝 Tokens changed. Rebuilding...')
-    build()
-  })
-} else {
-  build()
-}
+await build()
