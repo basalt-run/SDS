@@ -10,6 +10,10 @@ on:
       - 'components.json'
       - 'icons/**'
 
+# Use Node 24 for the JS-based actions (setup-node/checkout) ahead of GitHub deprecation of older runtimes.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
@@ -26,8 +30,11 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
 
-      - run: npm install
+      - name: Install dependencies
+        run: npm ci
+
       - run: npm run build
 
       - name: Bump version and commit
@@ -36,16 +43,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           npm version patch --no-git-tag-version
+          npm install --package-lock-only --ignore-scripts --no-audit --fund=false
           NEW_VERSION=$(node -e "console.log(require('./package.json').version)")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-          git add package.json
+          git add package.json package-lock.json
           git diff --staged --quiet || (git commit -m "chore: bump version [skip ci]" && git push)
 
       - name: Publish to npm
         if: env.NPM_TOKEN != ''
-        run: |
-          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
-          npm publish --access public
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create Release
         if: env.NPM_TOKEN == ''
