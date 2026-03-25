@@ -1,5 +1,5 @@
 {
-  "name": "@basalt/sds-export",
+  "name": "@basalt/sds-export2",
   "version": "1.0.0",
   "description": "Design system tokens — Code-native, Git-backed, AI-ready.",
   "license": "MIT",
@@ -51,5 +51,8 @@
   },
   "devDependencies": {
     "node-watch": "^0.7.4"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
