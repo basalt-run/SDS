@@ -28,7 +28,6 @@
   ],
   "scripts": {
     "build": "node scripts/build.js",
-    "build:watch": "node scripts/build.js --watch",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -48,9 +47,6 @@
     "tailwindcss": {
       "optional": true
     }
-  },
-  "devDependencies": {
-    "node-watch": "^0.7.4"
   },
   "publishConfig": {
     "access": "public"
