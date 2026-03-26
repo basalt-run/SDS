@@ -1,6 +1,6 @@
 {
   "name": "@basalt/sds-export3",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Design system tokens — Code-native, Git-backed, AI-ready.",
   "license": "MIT",
   "type": "module",
