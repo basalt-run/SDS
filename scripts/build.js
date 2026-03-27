@@ -209,7 +209,7 @@ function generateTailwindConfig(tokens) {
 
   const plugin = `
 // Auto-generated Tailwind config from Basalt tokens
-// Usage: plugins: [require('@basalt/sds-export3/tailwind')()]
+// Usage: plugins: [require('@basalt/sds-export4/tailwind')()]
 
 module.exports = function() {
   return {
@@ -248,32 +248,52 @@ ${shadowEntries}
 
 function generateComponentFiles(components) {
   const componentFiles = {}
-  
-  components.forEach(component => {
-    const { name, description = '', variants = {}, props = [] } = component
-    
+  const sourceExt = /.(tsx|ts|jsx|js|vue)$/i
+
+  function isRepoSourcePath(p) {
+    if (!p || typeof p !== 'string') return false
+    const t = p.trim()
+    if (!t || t.includes('..') || t.toLowerCase().startsWith('figma:')) return false
+    return t.includes('/') || sourceExt.test(t)
+  }
+
+  components.forEach((component) => {
+    const { name, description = '', variants = {}, props = [], sourcePath } = component
+
+    if (sourcePath && isRepoSourcePath(sourcePath)) {
+      const abs = path.join(rootDir, sourcePath)
+      if (fs.existsSync(abs)) {
+        const raw = fs.readFileSync(abs, 'utf-8')
+        const base = path.basename(sourcePath)
+        componentFiles[base] = raw
+        console.log('✓ Copied repo component', sourcePath, '→ dist/components/' + base)
+        return
+      }
+      console.warn('⚠️  sourcePath not on disk:', sourcePath, '(' + name + ') — generating stub')
+    }
+
     const propsInterface = props.length > 0
       ? props.map(p => {
           const type = p.values ? `'${p.values.join("' | '")}'` : p.type || 'string'
           return `  ${p.name}?: ${type}`
         }).join('\n')
       : ''
-    
+
     const defaultClasses = []
     const firstVariant = Object.values(variants)[0]
     if (firstVariant) {
       const bindings = firstVariant.tokenBindings || (firstVariant.states?.default?.tokenBindings) || []
       const arr = Array.isArray(bindings) ? bindings : Object.entries(bindings || {}).map(([, b]) => b)
       arr.forEach(b => {
-        const path = b.tokenPath || (b.token_path)
-        if (!path || typeof path !== 'string') return
-        const cssVar = `--${path.replace(/\./g, '-')}`
+        const pth = b.tokenPath || (b.token_path)
+        if (!pth || typeof pth !== 'string') return
+        const cssVar = `--${pth.replace(/\./g, '-')}`
         const prefix = (b.tailwindPrefix || '').trim()
         if (prefix) defaultClasses.push(`${prefix}-[var(${cssVar})]`)
       })
     }
     const baseClasses = defaultClasses.length > 0 ? defaultClasses.join(' ') : ''
-    
+
     const tsx = `'use client'
 
 import React from 'react'
@@ -300,16 +320,19 @@ export const ${name} = React.forwardRef<HTMLElement, ${name}Props>(
 ${name}.displayName = '${name}'
 export default ${name}
 `
-    
+
     componentFiles[`${name}.tsx`] = tsx
   })
-  
-  const barrel = components
-    .map(c => `export { default as ${c.name}, ${c.name} } from './${c.name}'`)
-    .join('\n')
-  
-  componentFiles['index.ts'] = barrel
-  
+
+  const barrelParts = []
+  for (const filename of Object.keys(componentFiles)) {
+    if (filename === 'index.ts') continue
+    if (!/\.(tsx|ts)$/i.test(filename)) continue
+    const base = filename.replace(/\.(tsx|ts)$/i, '')
+    barrelParts.push(`export { default as ${base}, ${base} } from './${base}'`)
+  }
+  componentFiles['index.ts'] = barrelParts.join('\n')
+
   return componentFiles
 }
 
@@ -319,7 +342,7 @@ function generateIndex(tokens) {
 
   const esmContent = `
 // Auto-generated from Basalt tokens
-// Usage: import { tokens } from '@basalt/sds-export3'
+// Usage: import { tokens } from '@basalt/sds-export4'
 
 export const tokens = ${JSON.stringify(resolvedTokens, null, 2)}
 
