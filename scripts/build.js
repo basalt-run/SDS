@@ -209,7 +209,7 @@ function generateTailwindConfig(tokens) {
 
   const plugin = `
 // Auto-generated Tailwind config from Basalt tokens
-// Usage: plugins: [require('@basalt/sds-export4/tailwind')()]
+// Usage: plugins: [require('@basalt-run/sds-npm-package-v1/tailwind')()]
 
 module.exports = function() {
   return {
@@ -342,7 +342,7 @@ function generateIndex(tokens) {
 
   const esmContent = `
 // Auto-generated from Basalt tokens
-// Usage: import { tokens } from '@basalt/sds-export4'
+// Usage: import { tokens } from '@basalt-run/sds-npm-package-v1'
 
 export const tokens = ${JSON.stringify(resolvedTokens, null, 2)}
 
